@@ -1,0 +1,3 @@
+# Audio controller - propojení python skriptu s Abletonem přes MIDI
+Hodně věcí je popsaných v hlavním README, zde zatím jen popíšu pluginový prototyp.
+Plugin lze importovat do Abletonu, je to soubor `itt_audio_controller.axmd`
