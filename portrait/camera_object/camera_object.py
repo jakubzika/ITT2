@@ -1,23 +1,25 @@
-#%%
+# %%
 from enum import Enum
 import numpy as np
 from typing import Optional
 from shapely import Point, Polygon
 
-#%%
+# %%
+
 
 class ObjectCategory(Enum):
     NATURE = 'nature'
     CITY = 'city'
 
+
 class ObjectType(Enum):
     NORMAL = 'normal'
-    
+
+
 class CameraObject():
 
     # aruco tag ID
     tracker_id: int = -1
-
 
     category: ObjectCategory = None
     object_type: ObjectType = None
@@ -30,8 +32,7 @@ class CameraObject():
 
     # objects position
     position: np.ndarray = np.zeros(2)
-    position_sh: Point = Point(0,0)
-    
+    position_sh: Point = Point(0, 0)
 
     prev_positions = np.zeros((150, 2))
 
@@ -54,18 +55,19 @@ class CameraObject():
         self.area_polygon = area_polygon
 
     def update_position(self, corners: Optional[np.ndarray] = None, visible: bool = True):
-        if not visible: 
+        if not visible:
             self.visible = False
-            #self.position = np.array([-1, -1])
+            # self.position = np.array([-1, -1])
         else:
             assert corners is not None
             if corners.shape == (2,):
                 self.position = corners
             else:
-                pos = np.mean(corners,axis=0)
+                pos = np.mean(corners, axis=0)
                 self.visible = True
-                self.position = pos
-                self.position_sh = Point(pos[0], pos[1])
+                old_factor = 0.6
+                self.position = old_factor*self.position + (1-old_factor)*pos
+                self.position_sh = Point(self.position[0], self.position[1])
 
         self.prev_positions = np.roll(self.prev_positions, -1, axis=0)
         self.prev_positions[-1] = self.position
@@ -76,9 +78,9 @@ class CameraObject():
 
     def get_id(self):
         return self.object_id
-    
+
     def get_tracker_id(self):
         return self.tracker_id
-    
+
     def id_from_detector(id):
         return "camera-object-{id}"

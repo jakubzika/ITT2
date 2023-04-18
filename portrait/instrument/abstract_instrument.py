@@ -1,17 +1,22 @@
 from abc import ABC, abstractmethod
 
+
 class AbstractInstrument(ABC):
-    def __init__(self):
-        pass
-    
-    @abstractmethod
-    def update(self):
-        print('ha')
-    
-    @abstractmethod
-    def get_data(self):
-        pass  
+    instrument_id = ""
+
+    def __init__(self, instrument_id: str):
+        self.instrument_id = instrument_id
 
     @abstractmethod
-    def get_id(self):
+    def update(self):
         pass
+
+    def get_id(self):
+        return self.instrument_id
+
+    @abstractmethod
+    def get_data(self) -> list[tuple[int, float | int]] | tuple[int, float | int]:
+        pass
+
+    def get_name(self):
+        return f"{self.instrument_id}[{self.midi_out}]"

@@ -1,0 +1,1 @@
+libcamera-vid --inline -t 0 --codec mjpeg -o udp://192.168.23.180:1234 --width 1400 --height 1400 --framerate 4

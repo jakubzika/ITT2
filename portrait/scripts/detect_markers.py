@@ -17,7 +17,7 @@ cap.set(cv2.CAP_PROP_EXPOSURE, -30)
 try:
     while True:
         ret, frame = cap.read()
-        frame =np.rot90(frame, 1)
+        # frame =np.rot90(frame, 1)
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
         corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, dict_aruco, parameters=parameters)
