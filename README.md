@@ -29,9 +29,12 @@ V této sekci bude popsán význam MIDI hodnot posílaných z obrazové do zvuko
 Využit je zatím pouze command `0xB0`, tj. *Continuous controller* (to jsou například potenciometry na midi controllerech). Tam je určeno číslo controlleru a hodnota 0-255.
 
 *Pozn.: prozatím jsou čísla controllerů nahodilá a mohou být brzy změněna pro praxi.*
-V následující tabulce *n* značí počet objektů se kterými pracujeme.
+V následující tabulce *n* značí počet kamerových objektů se kterými pracujeme, *m* počet sensorových objektů (Liza)
 
-| controller # | hodnota | význam | reakce zvuku |
-| ------------ | ------- | ------ | ------------ |
-| 1            | 0-255   | poměr města v přírodě (255 je nejvíc)  | zkreslení, zošklivení přírodní stopy
-| 2 až (2+*n*) | 0 / 255 | prezence objektu | coming soon, možné konkretizovat na jednotlivé objekty |
+V tuto chvíli n = 20 a m = 7
+
+| controller #           | hodnota | význam                                | reakce zvuku                                           |
+| ---------------------- | ------- | ------------------------------------- | ------------------------------------------------------ |
+| 1                      | 0-255   | poměr města v přírodě (255 je nejvíc) | zkreslení, zošklivení přírodní stopy                   |
+| 2 až (2+*n*)           | 0 / 255 | prezence objektu                      | coming soon, možné konkretizovat na jednotlivé objekty |
+| (3+*n*) až (3+*n*+*m*) | 0-255   | vzdálenost zachycená Liziným senzorem |                                                        |
