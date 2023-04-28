@@ -1,5 +1,13 @@
 # ITT2
 
+## Jak reaguje zvuk na změny?
+Na začátku je ticho.
+S přidáváním přírodních věcí se zesilují přírodní zvuky. Každý předmět má vlastní stopu, jejíž intenzita zvuku se zvýší když se objeví na scéně.
+
+S přibýváním civilizace (zakrytí IoT senzoru) 
+se kromě zvýšení stopy daného předmětu se sníží intenzita zvuku mixu přírodních stop, aby byla civilizace ještě více slyšet.
+
+
 ## Jak přichystat na výstavu
 ### Programové vybavení potřebné pro spuštění (varianta Windows)
 Windows 10
