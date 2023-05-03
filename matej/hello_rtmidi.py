@@ -5,7 +5,7 @@ import sys
 import time
 
 from rtmidi.midiutil import open_midioutput
-from rtmidi.midiconstants import NOTE_OFF, NOTE_ON
+from rtmidi.midiconstants import NOTE_OFF, NOTE_ON, CONTROL_CHANGE
 
 
 log = logging.getLogger('midiout')
@@ -23,16 +23,23 @@ except (EOFError, KeyboardInterrupt):
 
 
 with midiout:
-    for i in range (40, 100, 2):
-        note_on = [NOTE_ON, i, 112]  # channel 1, middle C, velocity 112
-        note_off = [NOTE_OFF, 2, 0]
-        print("Sending NoteOn event.")
-        midiout.send_message(note_on)
-        time.sleep(0.05)
-        #print("Sending NoteOff event.")
-        midiout.send_message(note_off)
+    channel = 67
+    midiout.send_message([CONTROL_CHANGE | 1 , channel, 0x12])
+    print("Map it now");
+    time.sleep(3)
+    # midiout.send_message([CONTROL_CHANGE & 0xF0, channel, 0x7f])
 
-del midiout
+
+    # for i in range (40, 100, 2):
+    #     note_on = [NOTE_ON, i, 112]  # channel 1, middle C, velocity 112
+    #     note_off = [NOTE_OFF, 2, 0]
+    #     print("Sending NoteOn event.")
+    #     midiout.send_message(note_on)
+    #     time.sleep(0.05)
+    #     #print("Sending NoteOff event.")
+    #     midiout.send_message(note_off)
+
+# del midiout
 print("Exit.")
 
 

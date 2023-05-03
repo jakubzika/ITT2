@@ -1,5 +1,13 @@
 # ITT2
 
+## Jak reaguje zvuk na změny?
+Na začátku je ticho.
+S přidáváním přírodních věcí se zesilují přírodní zvuky. Každý předmět má vlastní stopu, jejíž intenzita zvuku se zvýší když se objeví na scéně.
+
+S přibýváním civilizace (zakrytí IoT senzoru) 
+se kromě zvýšení stopy daného předmětu se sníží intenzita zvuku mixu přírodních stop, aby byla civilizace ještě více slyšet.
+
+
 ## Jak přichystat na výstavu
 ### Programové vybavení potřebné pro spuštění (varianta Windows)
 Windows 10
@@ -29,9 +37,28 @@ V této sekci bude popsán význam MIDI hodnot posílaných z obrazové do zvuko
 Využit je zatím pouze command `0xB0`, tj. *Continuous controller* (to jsou například potenciometry na midi controllerech). Tam je určeno číslo controlleru a hodnota 0-255.
 
 *Pozn.: prozatím jsou čísla controllerů nahodilá a mohou být brzy změněna pro praxi.*
-V následující tabulce *n* značí počet objektů se kterými pracujeme.
+V následující tabulce *n* značí počet kamerových objektů 
+se kterými pracujeme (v kódu `CAMERA_OBJECT_COUNT`), 
+*m* počet sensorových objektů (Liza, v kódu `SENSOR_OBJECT_COUNT`)
 
-| controller # | hodnota | význam | reakce zvuku |
-| ------------ | ------- | ------ | ------------ |
-| 1            | 0-255   | poměr města v přírodě (255 je nejvíc)  | zkreslení, zošklivení přírodní stopy
-| 2 až (2+*n*) | 0 / 255 | prezence objektu | coming soon, možné konkretizovat na jednotlivé objekty |
+V tuto chvíli n = 20 a m = 7
+
+| controller #           | hodnota   | význam                                | reakce zvuku                                           |
+| ---------------------- | --------- | ------------------------------------- | ------------------------------------------------------ |
+| 1                      | 0-127     | poměr města v přírodě (255 je nejvíc) | zkreslení, zošklivení přírodní stopy                   |
+| 2 až (*n*+1)           | 0 / 1-127 | prezence objektu                      | coming soon, možné konkretizovat na jednotlivé objekty |
+| (*n*+2) až (*n*+*m*+1) | 0-127     | vzdálenost zachycená Liziným senzorem |                                                        |
+
+### Mapování MIDI hodnot v Abletonu
+Bohužel, Ableton neumožňuje uložit "MIDI mapování" a přenášet jej mezi projekty, proto je zapotřebí v novém projektu provést mapování znova.
+K tomu slouží skript `matej/controller_mapping.py`.
+Pozor na správné nastavení konstant v něm, je možné je předat jako parametry (`--help` u skriptu).
+
+Postup:
+1. Nastartovat Ableton Live, otevřít projekt který chceme namapovat.
+2. Zmáčknout Ctrl+M a přepnout se do režimu mapování 
+3. Spustit skript `matej/controller_mapping.py` (případně `--help` u skriptu).
+4. Skript bude uživatele instruovat, který objekt / funkcionalita / parametr... bude mapován jako následující.
+5. Uživatel jej zaklikne v Abletonu, vrátí se do skriptu a zmáčkne Enter
+6. Pokud si to program přeje, vrátit se na bod 4.
+7. Na konci nezapomenout vypnout mapovací mód před **POSLEDNÍM ENTEREM** (program instruuje)
