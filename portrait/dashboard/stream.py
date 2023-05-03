@@ -5,7 +5,6 @@ from instrument.instruments_manager import InstrumentsManager
 
 import asyncio
 import json
-import random
 from quart import websocket, Quart
 import base64
 import cv2
@@ -21,7 +20,7 @@ def start_dashboard_stream_server(camera_scene: CameraScene, instrument_manager:
             obj = objectRegistry.get("testing-1")
             # output = json.dumps([float(obj.position[0]),float(obj.position[1])])
             output = json.dumps(
-                [obj.prev_positions[:, 0].tolist(), obj.prev_positions[:, 1].tolist()])
+                [obj.measurements[:, 0].tolist(), obj.measurements[:, 1].tolist()])
             await websocket.send(output)
             await asyncio.sleep(0.1)
 

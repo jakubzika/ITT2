@@ -1,5 +1,6 @@
 # %%
 from shapely import Point, Polygon
+from enum import Enum
 from cv2 import aruco
 import cv2
 import asyncio
@@ -9,11 +10,11 @@ from shapely import Polygon, Point
 import functools
 from concurrent.futures import ProcessPoolExecutor
 
-
 from camera_object.camera_object import CameraObject, ObjectCategory, ObjectType
 from camera_object.registry import objectRegistry, __ObjectRegistry__
 
 # %%
+sift = cv2.SIFT_create()
 
 
 def point_to_pos(p: Point):
@@ -32,6 +33,11 @@ executor = ProcessPoolExecutor(1)
 DEFAULT_POLYGON = Polygon([(200, 300), (200, 1000), (600, 1000), (600, 300)])
 
 
+class DetectionMode(Enum):
+    ARUCO = 'aruco'
+    SIFT = 'sift'
+
+
 class CameraScene:
     # aruco parameters
     aruco_dict = None
@@ -46,7 +52,9 @@ class CameraScene:
     # area polygon
     area_polygon = None
 
-    def __init__(self, area_polygon: Polygon = DEFAULT_POLYGON):
+    detection_mode = DetectionMode.ARUCO
+
+    def __init__(self, area_polygon: Polygon = DEFAULT_POLYGON, mode: DetectionMode = DetectionMode.ARUCO):
         self.aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
         self.aruco_parameters = aruco.DetectorParameters_create()
 
@@ -54,27 +62,55 @@ class CameraScene:
 
         self.init_fixed_camera_objects()
 
+        self.detection_mode = mode
+
     async def start_service(self):
-        cap = cv2.VideoCapture(0)
-        # cap = cv2.VideoCapture("udp://0.0.0.0:1234")
+        # cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture("udp://0.0.0.0:1234")
         # cap = cv2.VideoCapture(
         #     "/Users/jakubzika/Movies/Film 02.04.2023 v 11.30.mov")
+        # cap = cv2.VideoCapture(
+        #     "/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/videos/01.mov")
+        # cap.set(cv2.CV_CAP_PROP_BUFFERSIZE, 3)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+        ret, frame = cap.read()
+
+        w, h, _ = frame.shape
+
+        for obj in objectRegistry.get_all():
+            obj.width = w
+            obj.height = h
 
         while cap.isOpened():
+            print('read')
             await asyncio.sleep(0.05)
 
             ret, frame = cap.read()
+            ret, frame = cap.read()
+            ret, frame = cap.read()
+            ret, frame = cap.read()
+
             # frame = np.rot90(frame, 1)
             gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            corners, ids, rejected_img_points = aruco.detectMarkers(
-                gray, self.aruco_dict, parameters=self.aruco_parameters
-            )
 
-            self.update_objects(ids, corners)
+            w, h = gray.shape
+            # gray = cv2.resize(gray, (int(h*0.8), int(w*0.8)))
+
+            # try:
+            # self.update_objects_aruco(gray)
+            self.update_objects_sift(gray)
+
             self.frame = frame
+            # except Exception as e:
+            #     print("failed", e)
+
             await self.draw_state()
 
-    def update_objects(self, detected_ids: np.ndarray, detected_corners: np.ndarray):
+    def update_objects_aruco(self, img: np.ndarray):
+        detected_corners, detected_ids, rejected_img_points = aruco.detectMarkers(
+            img, self.aruco_dict, parameters=self.aruco_parameters
+        )
         if detected_ids is None:
             detected_ids = np.array([])
             detected_corners = np.array([])
@@ -87,12 +123,19 @@ class CameraScene:
                 tracker_id = detected_ids[i][0]
                 corners = detected_corners[i]
                 if tracker_id == object_tracker_id:
-                    camera_object.update_position(corners[0])
+                    camera_object.get_position_aruco(corners[0])
                     found = True
                     break
 
             if not found:
-                camera_object.update_position(corners=None, visible=False)
+                camera_object.get_position_aruco(
+                    corners=None, visible=False)
+
+    def update_objects_sift(self, img):
+        kp, des = sift.detectAndCompute(img, None)
+        for camera_object in objectRegistry.get_all():
+            found = camera_object.get_position_sift(kp, des)
+            # print(camera_object.get_id(), found, camera_object.position_sh)
 
     async def draw_state(self):
         im = self.frame.copy()
@@ -109,15 +152,20 @@ class CameraScene:
         self.status_frame = im
 
     def init_fixed_camera_objects(self):
-        obj1 = CameraObject("testing-1", 8, ObjectCategory.CITY,
-                            area_polygon=self.area_polygon)
-        obj2 = CameraObject("testing-2", 17, ObjectCategory.CITY,
+        obj1 = CameraObject("testing-1", 8,
+                            category=ObjectCategory.NATURE,
+                            sift_tracker_paths=[
+                                '/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/kuba/images/tracker42.png'],
+                            area_polygon=self.area_polygon,
+
+                            )
+        obj2 = CameraObject("testing-2", 17,
+                            category=ObjectCategory.NATURE,
+                            sift_tracker_paths=[
+                                '/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/kuba/images/tracker37.png'],
                             area_polygon=self.area_polygon)
         objectRegistry.add(obj1)
         objectRegistry.add(obj2)
 
 
 # %%
-
-p = Polygon([(0, 0), (0, 100), (100, 100), (100, 0)])
-coords_to_pos(list(p.exterior.coords))

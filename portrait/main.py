@@ -46,7 +46,7 @@ class Main:
         while True:
             print("---")
             for object in objectRegistry.get_all():
-                print(object.object_id, object.prev_positions)
+                print(object.object_id, object.measurements)
 
             await asyncio.sleep(0.3)
 
