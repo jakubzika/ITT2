@@ -42,7 +42,7 @@ class ProximityInstrument(AbstractInstrument):
         anchor = self.anchor_point
         # self.proximity = int(self.proximity * 0.9 + 0.1 *
         #                      shapely.distance(current_pos, anchor)/5)
-        self.proximity = int(shapely.distance(current_pos, anchor) / 5)
+        self.proximity = int(shapely.distance(current_pos, anchor) / 7)
 
         self.angle = np.degrees(
             np.arctan2(current_pos.x - anchor.x, current_pos.y - anchor.y)
@@ -51,5 +51,5 @@ class ProximityInstrument(AbstractInstrument):
     def get_data(self):
         return [
             # (self.midi_out_angle, min(np.abs(self.angle), 100)),
-            (self.midi_out_proximity, min(self.proximity, 255)),
+            (self.midi_out_proximity, 127-min(self.proximity, 127)),
         ]

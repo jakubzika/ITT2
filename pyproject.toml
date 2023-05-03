@@ -7,22 +7,18 @@ authors = ["Jakub <kuba.zika@email.cz>"]
 [tool.poetry.dependencies]
 python = "^3.10"
 scikit-build = "^0.16.7"
-cmake = "^3.25.2"
 opencv-python = "^4.7.0"
 ipykernel = "^6.21.2"
 numpy = "^1.24.2"
-Pillow = "^9.4.0"
-jurigged = "^0.5.5"
 matplotlib = "^3.7.1"
 pandas = "^1.5.3"
-imutils = "^0.5.4"
 opencv-contrib-python = "4.6.0.66"
 dash-extensions = "^0.1.13"
 quart = "^0.18.3"
 plotly = "^5.14.0"
 dash-mantine-components = "^0.12.0"
 shapely = "^2.0.1"
-python-rtmidi = "^1.4.9"
+python-rtmidi = {git = "https://github.com/SpotlightKid/python-rtmidi.git", rev = "eb16ab3268b29b94cd2baa6bfc777f5cf5f908ba"}
 
 [tool.poetry.dev-dependencies]
 

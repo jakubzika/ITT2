@@ -66,46 +66,54 @@ class CameraScene:
 
     async def start_service(self):
         # cap = cv2.VideoCapture(0)
-        cap = cv2.VideoCapture("udp://0.0.0.0:1234")
         # cap = cv2.VideoCapture(
         #     "/Users/jakubzika/Movies/Film 02.04.2023 v 11.30.mov")
         # cap = cv2.VideoCapture(
         #     "/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/videos/01.mov")
         # cap.set(cv2.CV_CAP_PROP_BUFFERSIZE, 3)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-        ret, frame = cap.read()
 
-        w, h, _ = frame.shape
+        while True:
+            cap = cv2.VideoCapture("udp://0.0.0.0:1234")
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            try:
 
-        for obj in objectRegistry.get_all():
-            obj.width = w
-            obj.height = h
+                ret, frame = cap.read()
 
-        while cap.isOpened():
-            print('read')
-            await asyncio.sleep(0.05)
+                w, h, _ = frame.shape
 
-            ret, frame = cap.read()
-            ret, frame = cap.read()
-            ret, frame = cap.read()
-            ret, frame = cap.read()
+                for obj in objectRegistry.get_all():
+                    obj.width = w
+                    obj.height = h
+                
+                for i in range(50):
+                #while cap.isOpened():
+                    await asyncio.sleep(0.05)
 
-            # frame = np.rot90(frame, 1)
-            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+                    for j in range(5):
+                        ret, frame = cap.read()
+                    ret, frame = cap.read()
+                    
 
-            w, h = gray.shape
-            # gray = cv2.resize(gray, (int(h*0.8), int(w*0.8)))
+                    # frame = np.rot90(frame, 1)
 
-            # try:
-            # self.update_objects_aruco(gray)
-            self.update_objects_sift(gray)
+                    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-            self.frame = frame
-            # except Exception as e:
-            #     print("failed", e)
+                    w, h = gray.shape
+                    # gray = cv2.resize(gray, (int(h*0.8), int(w*0.8)))
 
-            await self.draw_state()
+                    # try:
+                    # self.update_objects_aruco(gray)
+                    self.update_objects_sift(gray)
+
+                    self.frame = frame
+                    # except Exception as e:
+                    #     print("failed", e)
+
+                    await self.draw_state()
+            except Exception as e:
+                cap.release()
+                print("err",e)
 
     def update_objects_aruco(self, img: np.ndarray):
         detected_corners, detected_ids, rejected_img_points = aruco.detectMarkers(
@@ -155,14 +163,14 @@ class CameraScene:
         obj1 = CameraObject("testing-1", 8,
                             category=ObjectCategory.NATURE,
                             sift_tracker_paths=[
-                                '/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/kuba/images/tracker42.png'],
+                                'D:/itt/kuba/images/tracker45.png'],
                             area_polygon=self.area_polygon,
 
                             )
         obj2 = CameraObject("testing-2", 17,
                             category=ObjectCategory.NATURE,
                             sift_tracker_paths=[
-                                '/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/kuba/images/tracker37.png'],
+                               'D:/itt/kuba/images/tracker46.png'],
                             area_polygon=self.area_polygon)
         objectRegistry.add(obj1)
         objectRegistry.add(obj2)

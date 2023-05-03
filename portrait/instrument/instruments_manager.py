@@ -39,16 +39,16 @@ class InstrumentsManager:
             ProximityInstrument(
                 instrument_id="proximity-1",
                 camera_object_id="testing-1",
-                midi_out_angle=73,
-                midi_out_proximity=73,
-                point=Point(100, 100)
+                midi_out_angle=80,
+                midi_out_proximity=80,
+                point=Point(650, 650)
             ),
             ProximityInstrument(
                 instrument_id="proximity-2",
                 camera_object_id="testing-2",
-                midi_out_angle=76,
-                midi_out_proximity=76,
-                point=Point(100, 100)
+                midi_out_angle=73,
+                midi_out_proximity=73,
+                point=Point(650, 650)
             )
         )
 

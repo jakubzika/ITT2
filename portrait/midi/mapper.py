@@ -1,9 +1,17 @@
 # %%
+import rtmidi
+from rtmidi.midiutil import open_midioutput
 
-import midi
+from rtmidi.midiconstants import NOTE_OFF, NOTE_ON, CONTROL_CHANGE
 
-midi = midi.Midi(None)
+
+midiout, port_name = open_midioutput(None)
 
 # %%
 
-midi.send_control(73, 255)
+midiout.send_message([CONTROL_CHANGE | 0, 73, 127])
+
+
+# %%
+
+print("ffs")
