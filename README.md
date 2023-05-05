@@ -41,13 +41,15 @@ V následující tabulce *n* značí počet kamerových objektů
 se kterými pracujeme (v kódu `CAMERA_OBJECT_COUNT`), 
 *m* počet sensorových objektů (Liza, v kódu `SENSOR_OBJECT_COUNT`)
 
-V tuto chvíli n = 20 a m = 7
 
-| controller #           | hodnota   | význam                                | reakce zvuku                                           |
-| ---------------------- | --------- | ------------------------------------- | ------------------------------------------------------ |
-| 1                      | 0-127     | poměr města v přírodě (255 je nejvíc) | zkreslení, zošklivení přírodní stopy                   |
-| 2 až (*n*+1)           | 0 / 1-127 | prezence objektu                      | coming soon, možné konkretizovat na jednotlivé objekty |
-| (*n*+2) až (*n*+*m*+1) | 0-127     | vzdálenost zachycená Liziným senzorem |                                                        |
+V tuto chvíli n = 11 a m = 6
+1 (city vs. nature) zatím pouze rezervováno pro jistotu, ale není řízeno MIDI, nyní je to dané kumulativní vzdáleností od senzorů.
+
+| controller #           | hodnota | význam                                         | reakce zvuku                                                                     |
+| ---------------------- | ------- | ---------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1                      | 0-127   | poměr města v přírodě (255 je nejvíc)          | zkreslení, zošklivení přírodní stopy                                             |
+| 2 až (*n*+1)           | 0-127   | intenzita kamerového objektu (vzd. od středu?) | zesílení zvuku daného objektu, 0 znamená nejtišší                                |
+| (*n*+2) až (*n*+*m*+1) | 0-100   | vzdálenost ruky od senzorového objektu         | zesílení zvuku daného objektu (0 nejhlasitější) a ztišení celkové přírodní stopy |
 
 ### Mapování MIDI hodnot v Abletonu
 Bohužel, Ableton neumožňuje uložit "MIDI mapování" a přenášet jej mezi projekty, proto je zapotřebí v novém projektu provést mapování znova.
