@@ -8,8 +8,8 @@ import cv2
 
 # %%
 sift = cv2.SIFT_create()
-FLANN_INDEX_KDTREE = 2
-MIN_MATCH_COUNT = 16
+FLANN_INDEX_KDTREE = 1
+MIN_MATCH_COUNT = 20
 index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
 search_params = dict(checks=50)
 flann = cv2.FlannBasedMatcher(index_params, search_params)
@@ -90,11 +90,11 @@ class CameraObject():
         for path in self.sift_tracker_paths:
             tracker_img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
             kp, des = sift.detectAndCompute(tracker_img, None)
-            self.sift_trackers.append((kp, des))
+            self.sift_trackers.append((tracker_img,kp, des))
 
     def get_position_sift(self, im_kp, im_des):
 
-        for tracker_kp, tracker_des in self.sift_trackers:
+        for tracker_img, tracker_kp, tracker_des in self.sift_trackers:
             matches = flann.knnMatch(im_des, tracker_des, k=2)
             good = []
             for m, n in matches:
@@ -106,7 +106,7 @@ class CameraObject():
                 src_pts = np.float32(
                     [tracker_kp[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
                 M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-                h, w = 100, 100
+                h, w = tracker_img.shape
                 pts = np.float32(
                     [[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]]).reshape(-1, 1, 2)
                 dst = cv2.perspectiveTransform(pts, M)

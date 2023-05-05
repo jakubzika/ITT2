@@ -27,9 +27,14 @@ class Main:
 
     def start(self):
         loop = asyncio.get_event_loop()
-
+        camera_scene = self.camera_scene
         # start all the async services
-        loop.create_task(self.camera_scene.start_service())
+        camera_capture_thread = threading.Thread(target=lambda x: camera_scene.start_camera_service(), args=(1,))
+        camera_capture_thread.start()
+        camera_scene_thread = threading.Thread(target=lambda x: camera_scene.start_service(), args=(1,))
+        camera_scene_thread.start()
+
+        #loop.create_task(self.camera_scene.start_service())
         loop.create_task(self.instrument_manager.start_service())
 
         if DASHBOARD:

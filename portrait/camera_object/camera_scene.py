@@ -2,10 +2,12 @@
 from shapely import Point, Polygon
 from enum import Enum
 from cv2 import aruco
+import time
 import cv2
 import asyncio
 import asyncio
 import numpy as np
+import threading
 from shapely import Polygon, Point
 import functools
 from concurrent.futures import ProcessPoolExecutor
@@ -63,57 +65,66 @@ class CameraScene:
         self.init_fixed_camera_objects()
 
         self.detection_mode = mode
+        self.frame = np.zeros([1,1])
 
-    async def start_service(self):
+    def start_camera_service(self):
+        while True:
+            cap = cv2.VideoCapture("udp://@0.0.0.0:1234")
+            #cap.set(cv2.CAP_PROP_BUFFERSIZE, 5)
+            try:
+
+                ret, cam_frame = cap.read()
+#                while cam_frame == None:
+ #                   ret, cam_frame = cap.read()
+
+
+                print("read some", cam_frame)
+                w, h, _ = cam_frame.shape
+                crop_w = round(0.08*w)
+                crop_h = round(0.08*h)
+
+                for obj in objectRegistry.get_all():
+                    obj.width = w
+                    obj.height = h
+                
+                for i in range(50000):
+                #while cap.isOpened():
+                    # await asyncio.sleep(0.05)
+
+                    # for j in range(3):
+                    #     ret, frame = cap.read()
+                    ret, frame = cap.read()
+                    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+                    gray_2 = gray[crop_w:(w-crop_w),crop_h:(h-crop_h)].copy()
+                    self.frame = gray_2
+
+                    
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+            finally:
+                cap.release()
+
+
+    def start_service(self):
         # cap = cv2.VideoCapture(0)
         # cap = cv2.VideoCapture(
         #     "/Users/jakubzika/Movies/Film 02.04.2023 v 11.30.mov")
         # cap = cv2.VideoCapture(
         #     "/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/videos/01.mov")
         # cap.set(cv2.CV_CAP_PROP_BUFFERSIZE, 3)
-
+        print("staring camera scene")
+        while self.frame.shape[0] == 1:
+            time.sleep(0.5)
+        
+        print("acquired frame")
 
         while True:
-            cap = cv2.VideoCapture("udp://0.0.0.0:1234")
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            try:
+            print('sift detect')
+            frame = self.frame.copy()
+            self.update_objects_sift(frame)
 
-                ret, frame = cap.read()
-
-                w, h, _ = frame.shape
-
-                for obj in objectRegistry.get_all():
-                    obj.width = w
-                    obj.height = h
-                
-                for i in range(50):
-                #while cap.isOpened():
-                    await asyncio.sleep(0.05)
-
-                    for j in range(5):
-                        ret, frame = cap.read()
-                    ret, frame = cap.read()
-                    
-
-                    # frame = np.rot90(frame, 1)
-
-                    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-
-                    w, h = gray.shape
-                    # gray = cv2.resize(gray, (int(h*0.8), int(w*0.8)))
-
-                    # try:
-                    # self.update_objects_aruco(gray)
-                    self.update_objects_sift(gray)
-
-                    self.frame = frame
-                    # except Exception as e:
-                    #     print("failed", e)
-
-                    await self.draw_state()
-            except Exception as e:
-                cap.release()
-                print("err",e)
+            self.draw_state()
+            
 
     def update_objects_aruco(self, img: np.ndarray):
         detected_corners, detected_ids, rejected_img_points = aruco.detectMarkers(
@@ -145,7 +156,7 @@ class CameraScene:
             found = camera_object.get_position_sift(kp, des)
             # print(camera_object.get_id(), found, camera_object.position_sh)
 
-    async def draw_state(self):
+    def draw_state(self):
         im = self.frame.copy()
         # im = cv2.drawContours(im, coords_to_pos(list(self.area_polygon.exterior.coords)), -1, (255,0,0), -1)
         for obj in objectRegistry.get_all():
@@ -170,10 +181,39 @@ class CameraScene:
         obj2 = CameraObject("testing-2", 17,
                             category=ObjectCategory.NATURE,
                             sift_tracker_paths=[
-                               'D:/itt/kuba/images/tracker46.png'],
+                               'D:/itt/kuba/images/tracker49.png'],
+                            area_polygon=self.area_polygon)
+
+        obj3 = CameraObject("testing-3", 17,
+                            category=ObjectCategory.NATURE,
+                            sift_tracker_paths=[
+                                'D:/itt/kuba/images/tracker47.png'],
+                            area_polygon=self.area_polygon)
+        obj4 = CameraObject("testing-4", 17,
+                            category=ObjectCategory.NATURE,
+                            sift_tracker_paths=[
+                                'D:/itt/kuba/images/tracker48.png'],
+                            area_polygon=self.area_polygon)
+        obj5 = CameraObject("testing-5", 17,
+                            category=ObjectCategory.NATURE,
+                            sift_tracker_paths=[
+                                'D:/itt/kuba/images/tracker49.png'],
+                            area_polygon=self.area_polygon)
+        obj6 = CameraObject("testing-6", 17,
+                            category=ObjectCategory.NATURE,
+                            sift_tracker_paths=[
+                                'D:/itt/kuba/images/tracker50.png'],
                             area_polygon=self.area_polygon)
         objectRegistry.add(obj1)
         objectRegistry.add(obj2)
+        objectRegistry.add(obj3)
+        objectRegistry.add(obj4)
+        objectRegistry.add(obj5)
+        objectRegistry.add(obj6)
+
+
+
+
 
 
 # %%
