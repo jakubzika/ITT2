@@ -33,7 +33,7 @@ class Main:
         camera_capture_thread = threading.Thread(
             target=lambda x: camera_scene.start_camera_service(), args=(1,))
         camera_capture_thread.start()
-        camera_scene.start_sift_processes()
+        time.sleep(0.5)
         camera_scene_thread = threading.Thread(
             target=lambda x: camera_scene.start_detection_service(), args=(1,))
         camera_scene_thread.start()

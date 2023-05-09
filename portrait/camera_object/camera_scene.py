@@ -118,27 +118,30 @@ class CameraScene:
         crop_w = round(ratio*w)
         crop_h = round(ratio*h)
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        gray_2 = gray[crop_w:(w-crop_w), crop_h:(h-crop_h)].copy()
-        return gray_2
+        # gray_2 = gray[crop_w:(w-crop_w), crop_h:(h-crop_h)].copy()
+        return gray
 
     def start_camera_service(self):
 
         while True:
-
-            cap = cv2.VideoCapture("udp://@0.0.0.0:1234")
-
-            ret, cam_frame = cap.read()
-
-            converted_frame = self.convert_frame(cam_frame)
-            w, h = converted_frame.shape
-            for obj in objectRegistry.get_all():
-                obj.width = w
-                obj.height = h
-
-            # frame = np.ndarray(
-            #     converted_frame.shape, dtype=converted_frame.dtype, buffer=self.shm_frame.buf)
-
             try:
+
+                cap = cv2.VideoCapture("udp://@0.0.0.0:1234")
+
+                ret, cam_frame = cap.read()
+
+                converted_frame = self.convert_frame(cam_frame)
+                w, h = converted_frame.shape
+                print("setting width and height", w,h)
+                print(objectRegistry.get_all())
+                for obj in objectRegistry.get_all():
+                    print("setting dims", obj.get_id(), w,h)
+                    obj.width = w
+                    obj.height = h
+                
+                # frame = np.ndarray(
+                #     converted_frame.shape, dtype=converted_frame.dtype, buffer=self.shm_frame.buf)
+
                 while True:
                     ret, cam_frame = cap.read()
                     converted_frame = self.convert_frame(cam_frame)
@@ -204,6 +207,7 @@ class CameraScene:
                 tracker_id = detected_ids[i][0]
                 corners = detected_corners[i]
                 if tracker_id == object_tracker_id:
+                    
                     camera_object.get_position_aruco(corners[0])
                     found = True
                     break
@@ -214,15 +218,16 @@ class CameraScene:
 
     def draw_state(self):
         im = self.frame.copy()
+        im = cv2.cvtColor(im, cv2.COLOR_GRAY2RGB)
         # im = cv2.drawContours(im, coords_to_pos(list(self.area_polygon.exterior.coords)), -1, (255,0,0), -1)
         for obj in objectRegistry.get_all():
             col = None
             pos = point_to_pos(obj.position_sh)
-            # if obj.in_bounds:
-            # col = (0, 0, 255)
-            # else:
-            col = (255, 0, 0)
-            im = cv2.circle(im, pos, 1, col, 10)
+            if obj.in_bounds:
+                col = (0, 0, 255)
+            else:
+                col = (255, 0, 0)
+            im = cv2.circle(im, pos, 1, col, 30)
             # cv2.imshow("frame", im)
 
         self.status_frame = im
@@ -235,73 +240,80 @@ class CameraScene:
 
     def init_fixed_camera_objects(self):
         objectRegistry.add(
-            CameraObject("testing-1",                         category=ObjectCategory.NATURE,
+            CameraObject("tracker-8",category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/1.png'],
                          tracker_id=8
 
                          ),
-            CameraObject("testing-2",
+            CameraObject("tracker-3",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/2.png'],
                          tracker_id=3
                          ),
-            CameraObject("testing-3",
+            CameraObject("tracker-2",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/3.png'],
                          tracker_id=2
                          ),
-            CameraObject("testing-4",
+            CameraObject("tracker-10",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/4.png'],
                          tracker_id=10
                          ),
-            CameraObject("testing-5",
+            CameraObject("tracker-17",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/5.png'],
                          tracker_id=17
                          ),
-            CameraObject("testing-6",
+            CameraObject("tracker-0",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/6.png'],
                          tracker_id=0
                          ),
-            CameraObject("testing-7",
+            CameraObject("tracker-5",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/7.png'],
                          tracker_id=5
                          ),
-            CameraObject("testing-8",
+            CameraObject("tracker-11",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/7.png'],
                          tracker_id=11
                          ),
-            CameraObject("testing-9",
+            CameraObject("tracker-1",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/7.png'],
                          tracker_id=1
                          ),
-            CameraObject("testing-10",
+            CameraObject("tracker-15",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/7.png'],
                          tracker_id=15
                          ),
-            CameraObject("testing-11",
+            CameraObject("tracker-12",
                          category=ObjectCategory.NATURE,
                          sift_tracker_paths=[
                              'portrait/trackers/7.png'],
                          tracker_id=12
                          ),
-
+            CameraObject("tracker-6",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/7.png'],
+                         tracker_id=6
+                         )
+                         )
+            #print("created", len(objectRegistry.get_all()),"objects")
             # CameraObject("testing-8", 17,
             #              category=ObjectCategory.NATURE,
             #              sift_tracker_paths=[
@@ -312,4 +324,4 @@ class CameraScene:
             #              sift_tracker_paths=[
             #                  'portrait/trackers/11.png'],
             #              area_polygon=self.area_polygon)
-        )
+        

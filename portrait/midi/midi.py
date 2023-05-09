@@ -11,8 +11,9 @@ class Midi:
     def __init__(self, port):
         # midiout = rtmidi.MidiOut()
 
-        midiout, port_name = open_midioutput(None, use_virtual=True)
+        midiout, port_name = open_midioutput(port=3, use_virtual=True)
         self.midi = midiout
+        print(port_name)
         pass
 
     def send_control(self, channel, value):

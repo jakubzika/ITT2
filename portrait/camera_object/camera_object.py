@@ -16,7 +16,7 @@ search_params = dict(checks=50)
 flann = cv2.FlannBasedMatcher(index_params, search_params)
 
 
-DEFAULT_POLYGON = Polygon([(200, 300), (200, 1000), (600, 1000), (600, 300)])
+DEFAULT_POLYGON = Polygon([(1538, 1538), (340, 1490), (446, 287), (1600, 270)])
 
 
 weights = np.flip(np.arange(15))/5
@@ -77,7 +77,7 @@ class CameraObject():
 
         self.area_polygon = area_polygon
         self.sift_trackers = []
-        self.load_sift_trackers()
+        #self.load_sift_trackers()
 
         self.position = np.zeros(2, dtype=np.float32)
         self.position_sh = Point(0, 0)
@@ -136,6 +136,7 @@ class CameraObject():
         return False
 
     def get_position_aruco(self, corners: Optional[np.ndarray] = None, visible: bool = True):
+        #print("start update", self.object_id)
         if not visible:
             self.update_position(None)
         else:
@@ -144,6 +145,7 @@ class CameraObject():
                 pos = corners
             else:
                 pos = np.mean(corners, axis=0)
+            #print("end update", self.object_id, pos)
             self.update_position(pos)
 
     def update_position_from_shared(self):
@@ -155,12 +157,12 @@ class CameraObject():
 
         else:
             self.visible = False
-        # print(self.get_id(), position)
         if position is None:
             return
         position = np.minimum(position, [self.width, self.height])
         position = np.maximum(position, [0, 0])
-        self.position = position
+        self.position = position.copy()
+        #print(self.get_id(), self.position, position, self.width, self.height)
 
         self.measurements = np.roll(self.measurements, -1, axis=0)
         self.measurements[-1] = position

@@ -12,7 +12,7 @@ parameters = aruco.DetectorParameters_create()
 # cap.set(cv2.CAP_PROP_EXPOSURE, -30)
 
 
-cap = cv2.VideoCapture("udp://@:1234")
+cap = cv2.VideoCapture("udp://@0.0.0.0:1234")
 
 try:
     while True:

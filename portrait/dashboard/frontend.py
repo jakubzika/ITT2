@@ -32,7 +32,7 @@ app.layout = html.Div([
     dmc.Grid(children=[
         dmc.Col(dcc.Graph(id="graph-x"),span=6),
         dmc.Col(dcc.Graph(id="graph-y"),span=6),
-        dmc.Col(html.Img(id="video-stream", style={"background-color": "red",'width': '100%'}), span=4),
+        dmc.Col(html.Img(id="video-stream", style={"background-color": "red",'width': '100%'}), span=8),
         dmc.Col(html.Div(id="instruments", style={"white-space": "pre-wrap"}), span=4),
     ]),
 ])

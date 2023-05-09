@@ -21,6 +21,7 @@ serialPort = serial.Serial(port = arduino_ports[0], baudrate=9600,
 
 MIDI_OUTPUT_PORT = 3
 MIDI_CONTROLLER_NUMBER_BASE = 13
+SENSOR_OBJECTS_COUNT = 6
 
 try:
     midiout, port_name = open_midioutput(MIDI_OUTPUT_PORT)
@@ -50,10 +51,22 @@ with midiout:
                 if len(rawDistData) < 2:
                     continue                
 
-                dist = rawDistData[1]
+                dist = rawDistData[1].rstrip()
+
+                if (not dist.isnumeric()):
+                    continue
+
+                distNumeric = int(dist)
+
+                if (distNumeric < 0 or distNumeric > 100):
+                    continue
 
                 distances.append(int(dist))
             print(distances)
+
+            # Continue main loop, don't send nonsense
+            if (len(distances) != SENSOR_OBJECTS_COUNT):
+                continue
 
             # Send data over midi
             channel = MIDI_CONTROLLER_NUMBER_BASE

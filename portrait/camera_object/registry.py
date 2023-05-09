@@ -11,6 +11,7 @@ class __ObjectRegistry__:
 
     def add(self, *objects: CameraObject):
         for object in objects:
+            print("register camera obj", object.get_id())
             self.camera_objects[object.get_id()] = object
 
     def get(self, object_id: str):
