@@ -9,21 +9,18 @@ class Midi:
     port_name = None
 
     def __init__(self, port):
-        #midiout = rtmidi.MidiOut()
+        # midiout = rtmidi.MidiOut()
 
-        midiout, port_name = open_midioutput(None)
+        midiout, port_name = open_midioutput(None, use_virtual=True)
         self.midi = midiout
         pass
 
     def send_control(self, channel, value):
         self.midi.send_message([CONTROL_CHANGE | 0, channel, value])
-        
 
     def send_bulk_control(self, values: list[tuple[int, int]]):
         for channel, value in values:
             self.send_control(channel, value)
-        
 
     def get_out(self, channel: int):
         return lambda value: self.send_control(channel, value)
-        

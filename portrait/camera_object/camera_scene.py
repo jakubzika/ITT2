@@ -4,19 +4,13 @@ from enum import Enum
 from cv2 import aruco
 import time
 import cv2
-import asyncio
-import asyncio
 import numpy as np
-import threading
 from shapely import Polygon, Point
-import functools
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import shared_memory
 
-from camera_object.camera_object import CameraObject, ObjectCategory, ObjectType
+from camera_object.camera_object import CameraObject, ObjectCategory
 from camera_object.registry import objectRegistry, __ObjectRegistry__
-
-# %%
-sift = cv2.SIFT_create()
 
 
 def point_to_pos(p: Point):
@@ -27,10 +21,60 @@ def point_to_pos(p: Point):
 def coords_to_pos(coords):
     return [(int(pos[0]), int(pos[1])) for pos in coords]
 
-# %%
+
+sift = cv2.SIFT_create()
+FLANN_INDEX_KDTREE = 1
+index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+search_params = dict(checks=50)
+MIN_MATCH_COUNT = 10
+flann = cv2.FlannBasedMatcher(index_params, search_params)
 
 
-executor = ProcessPoolExecutor(1)
+def compute_sift_position(id, tracker_path, frame_width, frame_height):
+    print("Starting SIFT for", id)
+    tracker = cv2.imread(tracker_path, cv2.IMREAD_GRAYSCALE)
+
+    tracker_kp, tracker_des = sift.detectAndCompute(tracker, None)
+
+    shm_frame = shared_memory.SharedMemory(name="frame-buffer")
+    frame = np.ndarray((frame_width, frame_height),
+                       dtype=np.uint8, buffer=shm_frame.buf)
+
+    shm_pos = shared_memory.SharedMemory(name=id+"-position")
+    pos = np.ndarray((2,), dtype=np.float32, buffer=shm_pos.buf)
+
+    h, w = tracker.shape
+
+    while True:
+        try:
+            frame_copy = frame.copy()
+
+            im_kp, im_des = sift.detectAndCompute(frame_copy, None)
+            matches = flann.knnMatch(im_des, tracker_des, k=2)
+            good = []
+            for m, n in matches:
+                if m.distance < 0.8*n.distance:
+                    good.append(m)
+            if len(good) > MIN_MATCH_COUNT:
+                dst_pts = np.float32(
+                    [im_kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+                src_pts = np.float32(
+                    [tracker_kp[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+                M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+                pts = np.float32(
+                    [[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]]).reshape(-1, 1, 2)
+                dst = cv2.perspectiveTransform(pts, M)
+                detected_pos = np.mean(dst, axis=0).reshape(2)
+                pos[:] = detected_pos[:]
+                # pos[0] =
+                # pos[1] = 123
+                # print(id, pos)
+        except Exception as e:
+            # print(e)
+            time.sleep(1)
+        # return None
+
 
 DEFAULT_POLYGON = Polygon([(200, 300), (200, 1000), (600, 1000), (600, 300)])
 
@@ -65,66 +109,84 @@ class CameraScene:
         self.init_fixed_camera_objects()
 
         self.detection_mode = mode
-        self.frame = np.zeros([1,1])
+        self.frame = np.zeros([1, 1])
+
+    @staticmethod
+    def convert_frame(frame):
+        w, h, _ = frame.shape
+        ratio = 0.001
+        crop_w = round(ratio*w)
+        crop_h = round(ratio*h)
+        gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        gray_2 = gray[crop_w:(w-crop_w), crop_h:(h-crop_h)].copy()
+        return gray_2
 
     def start_camera_service(self):
+
         while True:
+
             cap = cv2.VideoCapture("udp://@0.0.0.0:1234")
-            #cap.set(cv2.CAP_PROP_BUFFERSIZE, 5)
+
+            ret, cam_frame = cap.read()
+
+            converted_frame = self.convert_frame(cam_frame)
+            w, h = converted_frame.shape
+            for obj in objectRegistry.get_all():
+                obj.width = w
+                obj.height = h
+
+            # frame = np.ndarray(
+            #     converted_frame.shape, dtype=converted_frame.dtype, buffer=self.shm_frame.buf)
+
             try:
+                while True:
+                    ret, cam_frame = cap.read()
+                    converted_frame = self.convert_frame(cam_frame)
+                    self.frame = converted_frame
 
-                ret, cam_frame = cap.read()
-#                while cam_frame == None:
- #                   ret, cam_frame = cap.read()
+                    self.update_objects_aruco(converted_frame)
+                    self.draw_state()
 
-
-                print("read some", cam_frame)
-                w, h, _ = cam_frame.shape
-                crop_w = round(0.08*w)
-                crop_h = round(0.08*h)
-
-                for obj in objectRegistry.get_all():
-                    obj.width = w
-                    obj.height = h
-                
-                for i in range(50000):
-                #while cap.isOpened():
-                    # await asyncio.sleep(0.05)
-
-                    # for j in range(3):
-                    #     ret, frame = cap.read()
-                    ret, frame = cap.read()
-                    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-                    gray_2 = gray[crop_w:(w-crop_w),crop_h:(h-crop_h)].copy()
-                    self.frame = gray_2
-
-                    
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
+            except Exception as e:
+                print("error", e)
             finally:
                 cap.release()
 
+    def start_sift_processes(self):
+        pass
 
-    def start_service(self):
-        # cap = cv2.VideoCapture(0)
-        # cap = cv2.VideoCapture(
-        #     "/Users/jakubzika/Movies/Film 02.04.2023 v 11.30.mov")
-        # cap = cv2.VideoCapture(
-        #     "/Users/jakubzika/School/Magistr/2.semestr/ITT2/ITT2/videos/01.mov")
-        # cap.set(cv2.CV_CAP_PROP_BUFFERSIZE, 3)
-        print("staring camera scene")
+    def start_detection_service(self):
+        # pass
+        print("waitig for frame")
         while self.frame.shape[0] == 1:
             time.sleep(0.5)
-        
-        print("acquired frame")
+        print("got frame")
 
+        # processes = []
+        # for obj in objectRegistry.get_all():
+        #     p = ProcessPoolExecutor().submit(
+        #         compute_sift_position, obj.object_id, obj.sift_tracker_paths[0], self.frame.shape[0], self.frame.shape[1])
+        #     processes.append(p)
         while True:
-            print('sift detect')
-            frame = self.frame.copy()
-            self.update_objects_sift(frame)
-
+            self.update_objects_aruco(self.frame)
             self.draw_state()
-            
+            time.sleep(0.05)
+        # while self.frame.shape[0] == 1:
+        #     time.sleep(0.5)
+
+        # while True:
+        #     time.sleep(0.5)
+        #     self.update_objects_aruco(self.frame)
+        #     # for obj in objectRegistry.get_all():
+        #     # frame = self.frame.copy()
+        #     # kp, des = sift.detectAndCompute(frame, None)
+        #     # obj.get_position_sift(kp, des)
+        #     # obj.update_position_from_shared()
+        #     # kp, des = sift.detectAndCompute(frame, None)
+
+        #     self.draw_state()
 
     def update_objects_aruco(self, img: np.ndarray):
         detected_corners, detected_ids, rejected_img_points = aruco.detectMarkers(
@@ -150,70 +212,104 @@ class CameraScene:
                 camera_object.get_position_aruco(
                     corners=None, visible=False)
 
-    def update_objects_sift(self, img):
-        kp, des = sift.detectAndCompute(img, None)
-        for camera_object in objectRegistry.get_all():
-            found = camera_object.get_position_sift(kp, des)
-            # print(camera_object.get_id(), found, camera_object.position_sh)
-
     def draw_state(self):
         im = self.frame.copy()
         # im = cv2.drawContours(im, coords_to_pos(list(self.area_polygon.exterior.coords)), -1, (255,0,0), -1)
         for obj in objectRegistry.get_all():
             col = None
             pos = point_to_pos(obj.position_sh)
-            if obj.in_bounds:
-                col = (0, 0, 255)
-            else:
-                col = (255, 0, 0)
+            # if obj.in_bounds:
+            # col = (0, 0, 255)
+            # else:
+            col = (255, 0, 0)
             im = cv2.circle(im, pos, 1, col, 10)
+            # cv2.imshow("frame", im)
 
         self.status_frame = im
 
+    def __del__(self):
+        # cv2.destroyWindow('frame')
+        # self.shm_frame.close()
+        # self.shm_frame.unlink()
+        pass
+
     def init_fixed_camera_objects(self):
-        obj1 = CameraObject("testing-1", 8,
-                            category=ObjectCategory.NATURE,
-                            sift_tracker_paths=[
-                                'D:/itt/kuba/images/tracker45.png'],
-                            area_polygon=self.area_polygon,
+        objectRegistry.add(
+            CameraObject("testing-1",                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/1.png'],
+                         tracker_id=8
 
-                            )
-        obj2 = CameraObject("testing-2", 17,
-                            category=ObjectCategory.NATURE,
-                            sift_tracker_paths=[
-                               'D:/itt/kuba/images/tracker49.png'],
-                            area_polygon=self.area_polygon)
+                         ),
+            CameraObject("testing-2",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/2.png'],
+                         tracker_id=3
+                         ),
+            CameraObject("testing-3",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/3.png'],
+                         tracker_id=2
+                         ),
+            CameraObject("testing-4",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/4.png'],
+                         tracker_id=10
+                         ),
+            CameraObject("testing-5",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/5.png'],
+                         tracker_id=17
+                         ),
+            CameraObject("testing-6",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/6.png'],
+                         tracker_id=0
+                         ),
+            CameraObject("testing-7",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/7.png'],
+                         tracker_id=5
+                         ),
+            CameraObject("testing-8",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/7.png'],
+                         tracker_id=11
+                         ),
+            CameraObject("testing-9",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/7.png'],
+                         tracker_id=1
+                         ),
+            CameraObject("testing-10",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/7.png'],
+                         tracker_id=15
+                         ),
+            CameraObject("testing-11",
+                         category=ObjectCategory.NATURE,
+                         sift_tracker_paths=[
+                             'portrait/trackers/7.png'],
+                         tracker_id=12
+                         ),
 
-        obj3 = CameraObject("testing-3", 17,
-                            category=ObjectCategory.NATURE,
-                            sift_tracker_paths=[
-                                'D:/itt/kuba/images/tracker47.png'],
-                            area_polygon=self.area_polygon)
-        obj4 = CameraObject("testing-4", 17,
-                            category=ObjectCategory.NATURE,
-                            sift_tracker_paths=[
-                                'D:/itt/kuba/images/tracker48.png'],
-                            area_polygon=self.area_polygon)
-        obj5 = CameraObject("testing-5", 17,
-                            category=ObjectCategory.NATURE,
-                            sift_tracker_paths=[
-                                'D:/itt/kuba/images/tracker49.png'],
-                            area_polygon=self.area_polygon)
-        obj6 = CameraObject("testing-6", 17,
-                            category=ObjectCategory.NATURE,
-                            sift_tracker_paths=[
-                                'D:/itt/kuba/images/tracker50.png'],
-                            area_polygon=self.area_polygon)
-        objectRegistry.add(obj1)
-        objectRegistry.add(obj2)
-        objectRegistry.add(obj3)
-        objectRegistry.add(obj4)
-        objectRegistry.add(obj5)
-        objectRegistry.add(obj6)
-
-
-
-
-
-
-# %%
+            # CameraObject("testing-8", 17,
+            #              category=ObjectCategory.NATURE,
+            #              sift_tracker_paths=[
+            #                  'portrait/trackers/11.png'],
+            #              area_polygon=self.area_polygon),
+            # CameraObject("testing-9", 17,
+            #              category=ObjectCategory.NATURE,
+            #              sift_tracker_paths=[
+            #                  'portrait/trackers/11.png'],
+            #              area_polygon=self.area_polygon)
+        )

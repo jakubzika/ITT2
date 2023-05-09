@@ -1,6 +1,7 @@
 import cv2
 import asyncio
 import threading
+import time
 import numpy as np
 
 from camera_object.camera_scene import CameraScene
@@ -26,17 +27,29 @@ class Main:
         self.instrument_manager.set_out(self.midi_out)
 
     def start(self):
-        loop = asyncio.get_event_loop()
+        # loop = asyncio.get_event_loop()
         camera_scene = self.camera_scene
         # start all the async services
-        camera_capture_thread = threading.Thread(target=lambda x: camera_scene.start_camera_service(), args=(1,))
+        camera_capture_thread = threading.Thread(
+            target=lambda x: camera_scene.start_camera_service(), args=(1,))
         camera_capture_thread.start()
-        camera_scene_thread = threading.Thread(target=lambda x: camera_scene.start_service(), args=(1,))
+        camera_scene.start_sift_processes()
+        camera_scene_thread = threading.Thread(
+            target=lambda x: camera_scene.start_detection_service(), args=(1,))
         camera_scene_thread.start()
 
-        #loop.create_task(self.camera_scene.start_service())
-        loop.create_task(self.instrument_manager.start_service())
+        instruments_thread = threading.Thread(
+            target=lambda x: self.instrument_manager.start_service(), args=(1,))
+        instruments_thread.start()
 
+        print("go")
+
+        # while True:
+        #     print("frame")
+        #     cv2.imshow("frame", np.zeros((100, 100)))
+        #     time.sleep(0.1)
+        #     if cv2.waitKey(1) & 0xFF == ord('q'):
+        #         break
         if DASHBOARD:
             dashboard_thread = threading.Thread(target=start_dashboard)
             dashboard_thread.start()
@@ -45,7 +58,7 @@ class Main:
 
         # ---
 
-        loop.run_forever()
+        # loop.run_forever()
 
     async def log_objects(self):
         while True:
