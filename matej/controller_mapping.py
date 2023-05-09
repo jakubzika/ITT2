@@ -11,14 +11,14 @@ if len(sys.argv) > 1 and sys.argv[1] == '--help':
     print("Usage: python3 {} [midi_port camera_object_count sensor_object_count]".format(sys.argv[0]))
     exit()
 
-CAMERA_OBJECT_COUNT = 3
-SENSOR_OBJECT_COUNT = 4
+CAMERA_OBJECT_COUNT = 10
+SENSOR_OBJECT_COUNT = 6
 
 def map_midi_control(controller_number, controller_name, channel = 0):
     print("Next one to map is {}. Press enter when ready.".format(controller_name))
     input()
     midiout.send_message([CONTROL_CHANGE | channel , controller_number, 0x12])
-    return;
+    return
 
 port = sys.argv[1] if len(sys.argv) > 1 else None
 

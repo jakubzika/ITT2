@@ -9,7 +9,7 @@ import serial.tools.list_ports
 arduino_ports = [
     p.device
     for p in serial.tools.list_ports.comports()
-    if 'Arduino' in p.description  # may need tweaking to match new arduinos
+    # if 'Arduino' in p.description  # I suppose that there is only one COM port
 ]
 if not arduino_ports:
     raise IOError("No Arduino found")
@@ -19,8 +19,8 @@ if len(arduino_ports) > 1:
 serialPort = serial.Serial(port = arduino_ports[0], baudrate=9600,
                            timeout=2, stopbits=serial.STOPBITS_ONE)
 
-MIDI_OUTPUT_PORT = 1
-MIDI_CONTROLLER_NUMBER_BASE = 2
+MIDI_OUTPUT_PORT = 3
+MIDI_CONTROLLER_NUMBER_BASE = 12
 
 try:
     midiout, port_name = open_midioutput(MIDI_OUTPUT_PORT)
@@ -45,12 +45,12 @@ with midiout:
             for rawDist in serialString.split(','):
                 rawDistData = rawDist.split(':')
 
-                if len(rawDistData < 2):
+                if len(rawDistData) < 2:
                     continue                
 
                 dist = rawDistData[1]
 
-                if not dist.is_numeric():
+                if not dist.isnumeric():
                     continue
 
                 distances.append(int(dist))
@@ -60,5 +60,6 @@ with midiout:
             channel = MIDI_CONTROLLER_NUMBER_BASE
 
             for distance in distances:
+                distance = distance/100 * 127 # adjusting the MIDI signal because when sending 100 it maps to 79
                 midiout.send_message([CONTROL_CHANGE | 0, channel, distance])
                 channel += 1
