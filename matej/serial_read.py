@@ -20,7 +20,7 @@ serialPort = serial.Serial(port = arduino_ports[0], baudrate=9600,
                            timeout=2, stopbits=serial.STOPBITS_ONE)
 
 MIDI_OUTPUT_PORT = 3
-MIDI_CONTROLLER_NUMBER_BASE = 12
+MIDI_CONTROLLER_NUMBER_BASE = 13
 
 try:
     midiout, port_name = open_midioutput(MIDI_OUTPUT_PORT)
