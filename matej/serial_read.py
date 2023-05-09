@@ -39,19 +39,18 @@ with midiout:
 
             # Print the contents of the serial data
             serialString = serialString.decode('Ascii')
-            #print(serialString)
+            # print(serialString)
             distances = []
+            rawDists = serialString.split(',')
+            # print(rawDists)
 
-            for rawDist in serialString.split(','):
+            for rawDist in rawDists:
                 rawDistData = rawDist.split(':')
 
                 if len(rawDistData) < 2:
                     continue                
 
                 dist = rawDistData[1]
-
-                if not dist.isnumeric():
-                    continue
 
                 distances.append(int(dist))
             print(distances)
