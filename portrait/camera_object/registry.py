@@ -9,9 +9,9 @@ class __ObjectRegistry__:
     def __init__(self):
         pass
 
-    def add(self, object: CameraObject):
-        self.camera_objects[object.get_id()] = object
-        self.camera_tracker_objects[object.get_tracker_id()] = object
+    def add(self, *objects: CameraObject):
+        for object in objects:
+            self.camera_objects[object.get_id()] = object
 
     def get(self, object_id: str):
         try:
