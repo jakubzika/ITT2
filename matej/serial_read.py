@@ -2,6 +2,22 @@ import serial
 from rtmidi.midiutil import open_midioutput
 from rtmidi.midiconstants import NOTE_OFF, NOTE_ON, CONTROL_CHANGE
 import sys
+import warnings
+import serial
+import serial.tools.list_ports
+
+arduino_ports = [
+    p.device
+    for p in serial.tools.list_ports.comports()
+    if 'Arduino' in p.description  # may need tweaking to match new arduinos
+]
+if not arduino_ports:
+    raise IOError("No Arduino found")
+if len(arduino_ports) > 1:
+    warnings.warn('Multiple Arduinos found - using the first')
+
+serialPort = serial.Serial(port = arduino_ports[0], baudrate=9600,
+                           timeout=2, stopbits=serial.STOPBITS_ONE)
 
 MIDI_OUTPUT_PORT = 1
 MIDI_CONTROLLER_NUMBER_BASE = 2
@@ -10,9 +26,6 @@ try:
     midiout, port_name = open_midioutput(MIDI_OUTPUT_PORT)
 except (EOFError, KeyboardInterrupt):
     sys.exit()
-
-serialPort = serial.Serial(port = "COM4", baudrate=9600,
-                           timeout=2, stopbits=serial.STOPBITS_ONE)
 
 serialString = ""                           # Used to hold data coming over UART
 
@@ -28,8 +41,19 @@ with midiout:
             serialString = serialString.decode('Ascii')
             #print(serialString)
             distances = []
-            for dist in serialString.split(','):
-                distances.append(int(dist.split(':')[1]))
+
+            for rawDist in serialString.split(','):
+                rawDistData = rawDist.split(':')
+
+                if len(rawDistData < 2):
+                    continue                
+
+                dist = rawDistData[1]
+
+                if not dist.is_numeric():
+                    continue
+
+                distances.append(int(dist))
             print(distances)
 
             # Send data over midi
