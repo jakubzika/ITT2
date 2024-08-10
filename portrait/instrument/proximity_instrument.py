@@ -49,7 +49,12 @@ class ProximityInstrument(AbstractInstrument):
         )
 
     def get_data(self):
+        if not self.camera_object.in_bounds:
+            return [
+                (self.midi_out_proximity, 0)
+            ]
+
         return [
             # (self.midi_out_angle, min(np.abs(self.angle), 100)),
-            (self.midi_out_proximity, min(self.proximity, 255)),
+            (self.midi_out_proximity, min(self.proximity, 127)),
         ]

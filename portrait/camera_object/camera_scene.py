@@ -6,15 +6,13 @@ import asyncio
 import asyncio
 import numpy as np
 from shapely import Polygon, Point
+from typing import Optional
 import functools
-from concurrent.futures import ProcessPoolExecutor
+import rerun as rr
 
 
-from camera_object.camera_object import CameraObject, ObjectCategory, ObjectType
+from camera_object.camera_object import CameraObject
 from camera_object.registry import objectRegistry, __ObjectRegistry__
-
-# %%
-
 
 def point_to_pos(p: Point):
     pos = p.coords[0]
@@ -24,13 +22,8 @@ def point_to_pos(p: Point):
 def coords_to_pos(coords):
     return [(int(pos[0]), int(pos[1])) for pos in coords]
 
-# %%
-
-
-executor = ProcessPoolExecutor(1)
 
 DEFAULT_POLYGON = Polygon([(200, 300), (200, 1000), (600, 1000), (600, 300)])
-
 
 class CameraScene:
     # aruco parameters
@@ -54,11 +47,16 @@ class CameraScene:
 
         self.init_fixed_camera_objects()
 
+    def log_objects(self):
+        print("CameraScene registered objects:")
+        for camera_object in objectRegistry.get_all():
+            print(camera_object.get_id(), camera_object.get_tracker_id())
+        print("")
+
     async def start_service(self):
-        cap = cv2.VideoCapture(0)
-        # cap = cv2.VideoCapture("udp://0.0.0.0:1234")
-        # cap = cv2.VideoCapture(
-        #     "/Users/jakubzika/Movies/Film 02.04.2023 v 11.30.mov")
+        print("starting CameraScene")
+        cap = cv2.VideoCapture(1)
+        
 
         while cap.isOpened():
             await asyncio.sleep(0.05)
@@ -72,50 +70,44 @@ class CameraScene:
 
             self.update_objects(ids, corners)
             self.frame = frame
-            await self.draw_state()
+            self.log_state()
+        print('video service has quit')
 
-    def update_objects(self, detected_ids: np.ndarray, detected_corners: np.ndarray):
+    def update_objects(self, detected_ids: Optional[np.ndarray], detected_corners: Optional[np.ndarray]):
         if detected_ids is None:
             detected_ids = np.array([])
             detected_corners = np.array([])
-
         for camera_object in objectRegistry.get_all():
-            found = False
-            object_tracker_id = camera_object.get_tracker_id()
-
-            for i in range(detected_ids.shape[0]):
-                tracker_id = detected_ids[i][0]
-                corners = detected_corners[i]
-                if tracker_id == object_tracker_id:
-                    camera_object.update_position(corners[0])
-                    found = True
-                    break
-
-            if not found:
+            aruco_idx = next(
+                (idx for idx in range(len(detected_ids)) if detected_ids[idx] == camera_object.get_tracker_id()),
+                None
+            )
+            
+            if aruco_idx != None:
+                corners = detected_corners[aruco_idx]
+                camera_object.update_position(corners[0])
+            else:
                 camera_object.update_position(corners=None, visible=False)
 
-    async def draw_state(self):
-        im = self.frame.copy()
-        # im = cv2.drawContours(im, coords_to_pos(list(self.area_polygon.exterior.coords)), -1, (255,0,0), -1)
-        for obj in objectRegistry.get_all():
-            col = None
-            pos = point_to_pos(obj.position_sh)
-            if obj.in_bounds:
-                col = (0, 0, 255)
-            else:
-                col = (255, 0, 0)
-            im = cv2.circle(im, pos, 1, col, 10)
+    def log_state(self):
+        corrected_frame = np.array(self.frame)
+        corrected_frame[:,:,0] = self.frame[:,:,2]
+        corrected_frame[:,:,1] = self.frame[:,:,1]
+        corrected_frame[:,:,2] = self.frame[:,:,0]
 
-        self.status_frame = im
+        rr.log("image", rr.Image(corrected_frame), static=True)
 
+        objs = objectRegistry.get_all()
+        rr.log("image", rr.Points2D(
+            [i.position for i in objs], 
+            colors=[(255,0,0) if i.in_bounds else (0,255,0) for i in objs],
+            radii=[5 for i in objs]
+        ), static=True)
+    
     def init_fixed_camera_objects(self):
-        obj1 = CameraObject("testing-1", 8, ObjectCategory.CITY,
-                            area_polygon=self.area_polygon)
-        obj2 = CameraObject("testing-2", 17, ObjectCategory.CITY,
-                            area_polygon=self.area_polygon)
-        objectRegistry.add(obj1)
-        objectRegistry.add(obj2)
-
+        # for i in range(16):
+        obj = CameraObject(f"obj-1", tracker_id=5, area_polygon=self.area_polygon)
+        objectRegistry.add(obj)
 
 # %%
 

@@ -2,19 +2,17 @@ import cv2
 import asyncio
 import threading
 import numpy as np
+import rerun as rr
 
 from camera_object.camera_scene import CameraScene
 from camera_object.registry import objectRegistry
-from dashboard.stream import start_dashboard_stream_server
-from dashboard.frontend import start_dashboard
 from instrument.instruments_manager import InstrumentsManager
 from midi.midi import Midi
+from rerun_dashboard.blueprint import get_dashboard_blueprint
 
-DASHBOARD = True
+RERUN_DASHBOARD = True
 
 # Handle everything
-
-
 class Main:
     camera_scene = None
 
@@ -31,13 +29,12 @@ class Main:
         # start all the async services
         loop.create_task(self.camera_scene.start_service())
         loop.create_task(self.instrument_manager.start_service())
+        if RERUN_DASHBOARD:
 
-        if DASHBOARD:
-            dashboard_thread = threading.Thread(target=start_dashboard)
-            dashboard_thread.start()
-            start_dashboard_stream_server(
-                self.camera_scene, self.instrument_manager)
+            rr.init("ruka-z-krajiny", spawn=True)
+            rr.send_blueprint(get_dashboard_blueprint())
 
+        print("started")
         # ---
 
         loop.run_forever()
