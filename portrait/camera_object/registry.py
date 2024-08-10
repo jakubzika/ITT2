@@ -17,8 +17,7 @@ class __ObjectRegistry__:
         try:
             return self.camera_objects[object_id]
         except:
-            raise Exception(
-                "Camera object with id\"{id}\" is not registered in ObjectRegistry")
+            raise Exception(f"Camera object with id '{object_id}' is not registered in ObjectRegistry")
 
     def get_all(self):
         return self.camera_objects.values()
