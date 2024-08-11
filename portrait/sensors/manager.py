@@ -13,29 +13,32 @@ class SensorsManager:
 
     async def start_service(self):
         print("starting SensorsManager")
-        try:
-            serial_port = serial.Serial(port = "/dev/ttys021", baudrate = 9600,
-                            timeout=2, stopbits=serial.STOPBITS_ONE)
-            while True:
-                # print('cycle')
-                await asyncio.sleep(0.05)
-                
-                serial_data = None
+        while True:
+            try:
+                serial_port = serial.Serial(port = "/dev/ttys021", baudrate = 9600,
+                                timeout=2, stopbits=serial.STOPBITS_ONE)
+                while True:
+                    # print('cycle')
+                    await asyncio.sleep(0.05)
+                    
+                    serial_data = None
 
-                while(serial_port.in_waiting != 0):
-                    serial_data = serial_port.readline()
+                    while(serial_port.in_waiting != 0):
+                        serial_data = serial_port.readline()
 
-                if serial_data == None:
-                    continue
+                    if serial_data == None:
+                        continue
 
-                
-                serial_string = serial_data.decode('Ascii').rstrip()
-                pairs = self.parse_serial_input(serial_string)
-                self.update_sensors(pairs)
+                    
+                    serial_string = serial_data.decode('Ascii').rstrip()
+                    pairs = self.parse_serial_input(serial_string)
+                    self.update_sensors(pairs)
 
-        except Exception as e:
-            print('error')
-            print(e)
+            except Exception as e:
+                print('error')
+                print(e)
+
+            print("finished")
 
         print("ended SensorsManager")
 
@@ -60,9 +63,3 @@ class SensorsManager:
             SensorEntity(id="Dist4", reading=0),
             SensorEntity(id="Dist5", reading=0),
         )
-
-
-#%%
-
-# import serial
-# print(serial.tools.list_ports.comports())

@@ -47,23 +47,31 @@ class CameraManager:
 
     async def start_service(self):
         print("starting CameraScene")
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
+
+        num_crashes = 0
         
-        
+        while True:
+            try:
+                while cap.isOpened():
+                    await asyncio.sleep(0.001)
 
-        while cap.isOpened():
-            await asyncio.sleep(0.05)
+                    ret, frame = cap.read()
+                    # frame = np.rot90(frame, 1)
+                    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+                    corners, ids, rejected_img_points = aruco.detectMarkers(
+                        gray, self.aruco_dict, parameters=self.aruco_parameters
+                    )
 
-            ret, frame = cap.read()
-            # frame = np.rot90(frame, 1)
-            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            corners, ids, rejected_img_points = aruco.detectMarkers(
-                gray, self.aruco_dict, parameters=self.aruco_parameters
-            )
+                    self.update_objects(ids, corners)
+                    self.frame = frame
+                    self.log_state()
+            except Exception as e:
+                print(f'CameraScene encountered exception. Crashed {num_crashes} already, restarting')
+                await asyncio.sleep(2)
 
-            self.update_objects(ids, corners)
-            self.frame = frame
-            self.log_state()
+                num_crashes += 1
+                
         print('video service has quit')
 
     def update_objects(self, detected_ids: Optional[np.ndarray], detected_corners: Optional[np.ndarray]):
@@ -90,12 +98,13 @@ class CameraManager:
 
         rr.log("image", rr.Image(corrected_frame), static=True)
 
-        objs = objectRegistry.get_all()
-        rr.log("image", rr.Points2D(
-            [i.position for i in objs], 
-            colors=[(255,0,0) if i.in_bounds else (0,255,0) for i in objs],
-            radii=[5 for i in objs]
-        ), static=True)
+        # objs = 
+        for camera_object in objectRegistry.get_all():
+            rr.log(f"image/{camera_object.get_id()}", rr.Points2D(
+                [camera_object.position], 
+                colors=[(255,0,0) if camera_object.in_bounds else (0,255,0)],
+                radii=[5]
+            ), static=True)
 
         # log bounds
         rr.log("image/bounds", 
