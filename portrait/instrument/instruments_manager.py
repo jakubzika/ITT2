@@ -70,6 +70,13 @@ class InstrumentsManager:
                 midi_out_proximity=110,
                 point=Point(764, 369)
             ),
+            ProximityInstrument(
+                instrument_id="proximity-1",
+                camera_object_id="obj-1",
+                midi_out_angle=0,
+                midi_out_proximity=115,
+                point=Point(764, 369)
+            ),
             # ProximiptyInstrument(
             #     instrument_id="proximity-2",
             #     camera_object_id="obj-2",
@@ -77,12 +84,16 @@ class InstrumentsManager:
             #     midi_out_proximity=76,
             #     point=Point(100, 100)
             # ),
-            # PresenceInstrument(
-            #     instrument_id="stone-1",
-            #     midi_out=90,
-            #     object_id='obj-1',
-            # )
+            
         )
+        for i in range(12):
+            instrumentRegistry.add(
+                PresenceInstrument(
+                    instrument_id=f"stone-{i}",
+                    midi_out=130 + i,
+                    object_id=f'obj-{i}',
+                ),
+            )
 
     async def start_service(self):
         print("starting InstrumentsManager")
