@@ -1,8 +1,8 @@
 import math
 
-from instrument.abstract_instrument import AbstractInstrument
+from instruments.abstract_instrument import AbstractInstrument
 from camera_object.registry import objectRegistry
-from camera_object.camera_object import ObjectCategory
+from camera_object.entity import ObjectCategory
 
 
 class CountInstrument(AbstractInstrument):

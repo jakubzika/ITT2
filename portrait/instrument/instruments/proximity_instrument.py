@@ -3,7 +3,7 @@ import shapely
 from shapely import Point
 import numpy as np
 
-from instrument.abstract_instrument import AbstractInstrument
+from .abstract_instrument import AbstractInstrument
 from camera_object.registry import objectRegistry
 
 
@@ -25,11 +25,9 @@ class ProximityInstrument(AbstractInstrument):
                  instrument_id: str,
                  camera_object_id: str,
                  midi_out_proximity: int,
-                 midi_out_angle: int,
                  point: Point
                  ):
         self.instrument_id = instrument_id
-        self.midi_out_angle = midi_out_angle
         self.midi_out_proximity = midi_out_proximity
         self.anchor_point = point
 
@@ -40,8 +38,6 @@ class ProximityInstrument(AbstractInstrument):
     def update(self):
         current_pos = self.camera_object.position_sh
         anchor = self.anchor_point
-        # self.proximity = int(self.proximity * 0.9 + 0.1 *
-        #                      shapely.distance(current_pos, anchor)/5)
         self.proximity = int(shapely.distance(current_pos, anchor) / 5)
 
         self.angle = np.degrees(
