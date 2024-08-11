@@ -52,9 +52,11 @@ V tuto chvíli n = 11 a m = 6
 | (*n*+2) až (*n*+*m*+1) | 0-100   | vzdálenost ruky od senzorového objektu         | zesílení zvuku daného objektu (0 nejhlasitější) a ztišení celkové přírodní stopy |
 
 ### Mapování MIDI hodnot v Abletonu
-Bohužel, Ableton neumožňuje uložit "MIDI mapování" a přenášet jej mezi projekty, proto je zapotřebí v novém projektu provést mapování znova.
-K tomu slouží skript `matej/controller_mapping.py`.
-Pozor na správné nastavení konstant v něm, je možné je předat jako parametry (`--help` u skriptu).
+Deprecated solution:
+
+>Bohužel, Ableton neumožňuje uložit "MIDI mapování" a přenášet jej mezi projekty, proto je zapotřebí v novém projektu provést mapování znova.
+>K tomu slouží skript `matej/controller_mapping.py`.
+>Pozor na správné nastavení konstant v něm, je možné je předat jako parametry (`--help` u skriptu).
 
 Postup:
 1. Nastartovat Ableton Live, otevřít projekt který chceme namapovat.
@@ -64,3 +66,7 @@ Postup:
 5. Uživatel jej zaklikne v Abletonu, vrátí se do skriptu a zmáčkne Enter
 6. Pokud si to program přeje, vrátit se na bod 4.
 7. Na konci nezapomenout vypnout mapovací mód před **POSLEDNÍM ENTEREM** (program instruuje)
+
+Naštěstí je způsob hardcoded CC hodnot MIDI signálu (pomocí objektu `ctlin`). Proto je v ovládacím pluginu podle počtu obejktů, resp. podle počtu stop, `12` kanálů 90-101 (počáteční kanál lze změnit v `\Mikulas\Max patches\CC_input.maxpat`), které ovládají stopy 2-13, což jsou stopy krajiny.
+
+Podobně jsou nastaveny CC porty pro ovládání stop civilizace. Tyto CC porty začínají číslem `80`.
