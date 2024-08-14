@@ -31,4 +31,4 @@ for i in range(80,80+6):
 
 #%%
 for i in range(90,90+12):
-    midi_controller.send_control(i, 120)
+    midi_controller.send_control(i, 60)
