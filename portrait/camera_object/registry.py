@@ -1,15 +1,15 @@
-from camera_object.camera_object import CameraObject, ObjectCategory, ObjectType
+from camera_object.entity import CameraEntity, ObjectCategory, ObjectType
 
 
 class __ObjectRegistry__:
-    camera_objects: dict[str, CameraObject] = {}
-    camera_tracker_objects: dict[int, CameraObject] = {}
+    camera_objects: dict[str, CameraEntity] = {}
+    camera_tracker_objects: dict[int, CameraEntity] = {}
     iot_objects = {}
 
     def __init__(self):
         pass
 
-    def add(self, *objects: CameraObject):
+    def add(self, *objects: CameraEntity):
         for object in objects:
             self.camera_objects[object.get_id()] = object
             self.camera_tracker_objects[object.get_tracker_id()] = object

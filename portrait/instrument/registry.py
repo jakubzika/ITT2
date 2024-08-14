@@ -1,5 +1,5 @@
-from camera_object.camera_object import CameraObject, ObjectCategory, ObjectType
-from instrument.abstract_instrument import AbstractInstrument
+from camera_object.entity import CameraEntity, ObjectCategory, ObjectType
+from .instruments.abstract_instrument import AbstractInstrument
 
 
 class __InstrumentRegistry__:
@@ -17,7 +17,7 @@ class __InstrumentRegistry__:
             return self.instruments[object_id]
         except:
             raise Exception(
-                "Camera object with id\"{id}\" is not registered in ObjectRegistry")
+                "Instrument with id\"{id}\" is not registered in ObjectRegistry")
 
     def get_all(self):
         return self.instruments.values()

@@ -1,5 +1,6 @@
 from rtmidi.midiutil import open_midioutput
 from rtmidi.midiconstants import NOTE_OFF, NOTE_ON, CONTROL_CHANGE
+from util import clip_7bit
 import rtmidi
 from rtmidi import midiutil
 import os
@@ -23,8 +24,8 @@ class Midi:
                         loopMIDI_port = None
                 if not(loopMIDI_port):
                     print("loopMIDI not set up")
-            else:
-                midiout.open_virtual_port("My virtual output")
+        else:
+            midiout.open_virtual_port("instrumento")
 
         self.midi = midiout
 

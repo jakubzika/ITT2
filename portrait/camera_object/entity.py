@@ -11,7 +11,7 @@ class ObjectCategory(Enum):
 class ObjectType(Enum):
     NORMAL = 'normal'
 
-class CameraObject():
+class CameraEntity():
     def __init__(self,
                  object_id: str,
                  tracker_id: int,

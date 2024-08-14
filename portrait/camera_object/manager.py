@@ -12,7 +12,7 @@ import rerun as rr
 from util import shapely_polygon_to_points_list
 
 
-from camera_object.camera_object import CameraObject
+from camera_object.entity import CameraEntity
 from camera_object.registry import objectRegistry, __ObjectRegistry__
 
 def point_to_pos(p: Point):
@@ -26,7 +26,7 @@ def coords_to_pos(coords):
 
 DEFAULT_POLYGON = Polygon([(740, 526), (780, 1073), (1670, 1000), (1614, 449)])
 
-class CameraScene:
+class CameraManager:
     def __init__(self, area_polygon: Polygon = DEFAULT_POLYGON):
         self.aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
         self.aruco_parameters = aruco.DetectorParameters_create()
@@ -47,23 +47,31 @@ class CameraScene:
 
     async def start_service(self):
         print("starting CameraScene")
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
+
+        num_crashes = 0
         
-        
+        while True:
+            try:
+                while cap.isOpened():
+                    await asyncio.sleep(0.001)
 
-        while cap.isOpened():
-            await asyncio.sleep(0.05)
+                    ret, frame = cap.read()
+                    # frame = np.rot90(frame, 1)
+                    gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+                    corners, ids, rejected_img_points = aruco.detectMarkers(
+                        gray, self.aruco_dict, parameters=self.aruco_parameters
+                    )
 
-            ret, frame = cap.read()
-            # frame = np.rot90(frame, 1)
-            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            corners, ids, rejected_img_points = aruco.detectMarkers(
-                gray, self.aruco_dict, parameters=self.aruco_parameters
-            )
+                    self.update_objects(ids, corners)
+                    self.frame = frame
+                    self.log_state()
+            except Exception as e:
+                print(f'CameraScene encountered exception. Crashed {num_crashes} already, restarting')
+                await asyncio.sleep(2)
 
-            self.update_objects(ids, corners)
-            self.frame = frame
-            self.log_state()
+                num_crashes += 1
+                
         print('video service has quit')
 
     def update_objects(self, detected_ids: Optional[np.ndarray], detected_corners: Optional[np.ndarray]):
@@ -90,12 +98,13 @@ class CameraScene:
 
         rr.log("image", rr.Image(corrected_frame), static=True)
 
-        objs = objectRegistry.get_all()
-        rr.log("image", rr.Points2D(
-            [i.position for i in objs], 
-            colors=[(255,0,0) if i.in_bounds else (0,255,0) for i in objs],
-            radii=[5 for i in objs]
-        ), static=True)
+        # objs = 
+        for camera_object in objectRegistry.get_all():
+            rr.log(f"image/{camera_object.get_id()}", rr.Points2D(
+                [camera_object.position], 
+                colors=[(255,0,0) if camera_object.in_bounds else (0,255,0)],
+                radii=[5]
+            ), static=True)
 
         # log bounds
         rr.log("image/bounds", 
@@ -104,25 +113,17 @@ class CameraScene:
                )
     
     def init_fixed_camera_objects(self):
-        # for i in range(16):
-        # obj = 
         objectRegistry.add(
-            CameraObject(f"obj-0", tracker_id=7, area_polygon=self.area_polygon),
-            CameraObject(f"obj-1", tracker_id=17, area_polygon=self.area_polygon),
-            CameraObject(f"obj-2", tracker_id=5, area_polygon=self.area_polygon),
-            CameraObject(f"obj-3", tracker_id=0, area_polygon=self.area_polygon),
-            CameraObject(f"obj-4", tracker_id=10, area_polygon=self.area_polygon),
-            CameraObject(f"obj-5", tracker_id=15, area_polygon=self.area_polygon),
-            CameraObject(f"obj-6", tracker_id=3, area_polygon=self.area_polygon),
-            CameraObject(f"obj-7", tracker_id=12, area_polygon=self.area_polygon),
-            CameraObject(f"obj-8", tracker_id=11, area_polygon=self.area_polygon),
-            CameraObject(f"obj-9", tracker_id=6, area_polygon=self.area_polygon),
-            CameraObject(f"obj-10", tracker_id=16, area_polygon=self.area_polygon),
-            CameraObject(f"obj-11", tracker_id=8, area_polygon=self.area_polygon),
-            
+            CameraEntity(f"obj-0", tracker_id=7, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-1", tracker_id=17, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-2", tracker_id=5, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-3", tracker_id=0, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-4", tracker_id=10, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-5", tracker_id=15, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-6", tracker_id=3, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-7", tracker_id=12, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-8", tracker_id=11, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-9", tracker_id=6, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-10", tracker_id=16, area_polygon=self.area_polygon),
+            CameraEntity(f"obj-11", tracker_id=8, area_polygon=self.area_polygon),
             )
-
-# %%
-
-p = Polygon([(0, 0), (0, 100), (100, 100), (100, 0)])
-coords_to_pos(list(p.exterior.coords))
